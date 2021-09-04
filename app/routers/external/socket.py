@@ -1,14 +1,6 @@
 from typing import List
 
-from fastapi import FastAPI, WebSocket, Request
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-
-app = FastAPI()
-
-app.mount("/templates", StaticFiles(directory="templates"), name="templates")
-templates = Jinja2Templates(directory="templates/")
+from fastapi import APIRouter, WebSocket
 
 
 class ConnectionManager:
@@ -27,22 +19,20 @@ class ConnectionManager:
 
     async def broadcast(self, message: str, client_port):
         for connection in self.active_connections:
-            if (connection.client.port != client_port): 
+            if connection.client.port != client_port:
                 await connection.send_text(f"otro-{client_port}-{message}")
 
 
 manager = ConnectionManager()
 
 
-@app.get("/", response_class=HTMLResponse)
-async def get(request: Request):
-    return templates.TemplateResponse("chat/FastAPI-CHAT.html", context={'request': request})
+router = APIRouter()
 
 
-@app.websocket("/ws/{client_id}")
+@router.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: int):
     await manager.connect(websocket)
-    await manager.broadcast(f"Entrando...", websocket.client.port)
+    await manager.broadcast("Entrando...", websocket.client.port)
     try:
         while True:
             data = await websocket.receive_text()
@@ -50,4 +40,4 @@ async def websocket_endpoint(websocket: WebSocket, client_id: int):
             await manager.broadcast(f"{data}", websocket.client.port)
     except Exception:
         manager.disconnect(websocket)
-        await manager.broadcast(f"Saliendo...", websocket.client.port)
+        await manager.broadcast("Saliendo...", websocket.client.port)
