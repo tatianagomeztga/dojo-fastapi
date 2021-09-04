@@ -1,6 +1,6 @@
 const client_id = Date.now()
 document.querySelector("#ws-id").textContent = client_id;
-const ws = new WebSocket(`ws://${window.location.host}/ws/${client_id}`);
+const ws = new WebSocket(`ws://${window.location.host}/api/web-socket/ws/${client_id}`);
 ws.onmessage = function (event) {
     const { data } = event
     let separator = data.indexOf("-")
